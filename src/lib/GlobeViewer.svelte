@@ -40,6 +40,63 @@
         destination: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 1000000),
       });
       
+      // Create ship icon as SVG data URL (20x20 pixels)
+      const shipIconSvg = `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="shipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#2c5aa0;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <!-- Ship hull -->
+        <path d="M3 14 Q3 16 5 16 L15 16 Q17 16 17 14 L16 12 L4 12 Z" fill="url(#shipGradient)" stroke="#1a365d" stroke-width="0.5"/>
+        <!-- Ship deck -->
+        <rect x="4" y="8" width="12" height="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.3"/>
+        <!-- Main mast -->
+        <rect x="9.5" y="3" width="1" height="9" fill="#8b4513"/>
+        <!-- Front mast -->
+        <rect x="6.5" y="4" width="0.8" height="6" fill="#8b4513"/>
+        <!-- Rear mast -->
+        <rect x="12.7" y="5" width="0.8" height="5" fill="#8b4513"/>
+        <!-- Main sail -->
+        <path d="M7 3 Q10 2 10 4 L10 7 Q7 8 7 6 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <!-- Front sail -->
+        <path d="M4 4 Q6.5 3.5 6.5 5 L6.5 7 Q4 7.5 4 6 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <!-- Rear sail -->
+        <path d="M13.5 5 Q16 4.5 16 6 L16 8 Q13.5 8.5 13.5 7 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <!-- Flag -->
+        <path d="M10.5 3 L14 3.5 L14 5 L10.5 4.5 Z" fill="#ef4444"/>
+      </svg>`;
+      
+      const shipIconDataUrl = `data:image/svg+xml;base64,${btoa(shipIconSvg)}`;
+      
+      // Add ship icon at origin point (0°, 0°)
+      viewer.entities.add({
+        id: 'ship-at-origin',
+        name: 'Ship at Origin',
+        position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Longitude: 0°, Latitude: 0°, Height: 0m
+        billboard: {
+          image: shipIconDataUrl,
+          width: 20,
+          height: 20,
+          pixelOffset: new Cesium.Cartesian2(0, -10), // Offset to center the icon
+          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          scaleByDistance: new Cesium.NearFarScalar(1.0e3, 1.0, 1.0e7, 0.3), // Scale with distance
+          disableDepthTestDistance: Number.POSITIVE_INFINITY // Always visible
+        },
+        label: {
+          text: 'Origin Ship',
+          font: '12px sans-serif',
+          fillColor: Cesium.Color.WHITE,
+          outlineColor: Cesium.Color.BLACK,
+          outlineWidth: 2,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+          pixelOffset: new Cesium.Cartesian2(0, -30),
+          show: false // Initially hidden, will show on click
+        }
+      });
+
       // Listen for camera movement
       viewer.camera.changed.addEventListener(() => {
         if (viewer) {
@@ -52,8 +109,22 @@
         }
       });
       
+      // Add click handler to show ship label
+      viewer.selectedEntityChanged.addEventListener((selectedEntity: any) => {
+        if (selectedEntity && selectedEntity.id === 'ship-at-origin') {
+          selectedEntity.label.show = true;
+        } else {
+          // Hide label when something else is selected or nothing is selected
+          const shipEntity = viewer.entities.getById('ship-at-origin');
+          if (shipEntity && shipEntity.label) {
+            shipEntity.label.show = false;
+          }
+        }
+      });
+      
       // Update the store with the viewer instance
       setViewer(viewer);
+      setLoading(false);
       
     } catch (error) {
       console.error('Error initializing Cesium viewer:', error);

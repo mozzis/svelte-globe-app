@@ -7,6 +7,8 @@
   let containerElement: HTMLDivElement;
   let viewer: any = null;
   let Cesium: any;
+  let isDraggingShip = false;
+  let dragEntity: any = null;
   
   onMount(async () => {
     try {
@@ -71,7 +73,7 @@
       const shipIconDataUrl = `data:image/svg+xml;base64,${btoa(shipIconSvg)}`;
       
       // Add ship icon at origin point (0°, 0°)
-      viewer.entities.add({
+      const shipEntity = viewer.entities.add({
         id: 'ship-at-origin',
         name: 'Ship at Origin',
         position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Longitude: 0°, Latitude: 0°, Height: 0m
@@ -86,16 +88,94 @@
           disableDepthTestDistance: Number.POSITIVE_INFINITY // Always visible
         },
         label: {
-          text: 'Origin Ship',
+          text: 'Draggable Ship',
           font: '12px sans-serif',
           fillColor: Cesium.Color.WHITE,
           outlineColor: Cesium.Color.BLACK,
           outlineWidth: 2,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
           pixelOffset: new Cesium.Cartesian2(0, -30),
-          show: false // Initially hidden, will show on click
+          show: false // Initially hidden, will show on select
         }
       });
+
+      // Mouse event handlers for ship dragging
+      const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      
+      // Left mouse button down
+      handler.setInputAction((event: any) => {
+        const pickedObject = viewer.scene.pick(event.position);
+        
+        if (Cesium.defined(pickedObject) && 
+            pickedObject.id && 
+            pickedObject.id.id === 'ship-at-origin') {
+          // Clicked on ship - start dragging
+          isDraggingShip = true;
+          dragEntity = pickedObject.id;
+          viewer.scene.screenSpaceCameraController.enableRotate = false;
+          viewer.scene.screenSpaceCameraController.enableTranslate = false;
+          viewer.scene.screenSpaceCameraController.enableZoom = false;
+          viewer.scene.screenSpaceCameraController.enableTilt = false;
+          viewer.scene.screenSpaceCameraController.enableLook = false;
+          
+          // Show label while dragging
+          dragEntity.label.show = true;
+          
+          // Change cursor to indicate dragging
+          viewer.canvas.style.cursor = 'move';
+        }
+        // If not clicked on ship, preserve default behavior (camera controls remain enabled)
+      }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+      
+      // Mouse move - handle dragging
+      handler.setInputAction((event: any) => {
+        if (isDraggingShip && dragEntity) {
+          const ray = viewer.camera.getPickRay(event.endPosition);
+          const cartesian = viewer.scene.globe.pick(ray, viewer.scene);
+          
+          if (cartesian) {
+            // Convert to cartographic coordinates
+            const cartographic = viewer.scene.globe.ellipsoid.cartesianToCartographic(cartesian);
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            
+            // Update ship position
+            dragEntity.position = Cesium.Cartesian3.fromDegrees(longitude, latitude, 0);
+            
+            // Update label text with coordinates
+            dragEntity.label.text = `Ship (${longitude.toFixed(2)}°, ${latitude.toFixed(2)}°)`;
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+      
+      // Left mouse button up - stop dragging
+      handler.setInputAction((event: any) => {
+        if (isDraggingShip) {
+          isDraggingShip = false;
+          dragEntity = null;
+          
+          // Re-enable camera controls
+          viewer.scene.screenSpaceCameraController.enableRotate = true;
+          viewer.scene.screenSpaceCameraController.enableTranslate = true;
+          viewer.scene.screenSpaceCameraController.enableZoom = true;
+          viewer.scene.screenSpaceCameraController.enableTilt = true;
+          viewer.scene.screenSpaceCameraController.enableLook = true;
+          
+          // Reset cursor
+          viewer.canvas.style.cursor = 'default';
+          
+          // Get final position and update label
+          const shipEntity = viewer.entities.getById('ship-at-origin');
+          if (shipEntity && shipEntity.position) {
+            const cartographic = viewer.scene.globe.ellipsoid.cartesianToCartographic(
+              shipEntity.position.getValue(viewer.clock.currentTime)
+            );
+            const longitude = Cesium.Math.toDegrees(cartographic.longitude);
+            const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            shipEntity.label.text = `Ship (${longitude.toFixed(2)}°, ${latitude.toFixed(2)}°)`;
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.LEFT_UP);
 
       // Listen for camera movement
       viewer.camera.changed.addEventListener(() => {
@@ -109,15 +189,17 @@
         }
       });
       
-      // Add click handler to show ship label
+      // Add click handler to show/hide ship label (when not dragging)
       viewer.selectedEntityChanged.addEventListener((selectedEntity: any) => {
-        if (selectedEntity && selectedEntity.id === 'ship-at-origin') {
-          selectedEntity.label.show = true;
-        } else {
-          // Hide label when something else is selected or nothing is selected
-          const shipEntity = viewer.entities.getById('ship-at-origin');
-          if (shipEntity && shipEntity.label) {
-            shipEntity.label.show = false;
+        if (!isDraggingShip) {
+          if (selectedEntity && selectedEntity.id === 'ship-at-origin') {
+            selectedEntity.label.show = true;
+          } else {
+            // Hide label when something else is selected or nothing is selected
+            const shipEntity = viewer.entities.getById('ship-at-origin');
+            if (shipEntity && shipEntity.label) {
+              shipEntity.label.show = false;
+            }
           }
         }
       });
@@ -135,6 +217,12 @@
   
   onDestroy(() => {
     if (viewer && !viewer.isDestroyed()) {
+      // Clean up event handlers
+      const canvas = viewer.scene.canvas;
+      if (canvas) {
+        canvas.style.cursor = 'default';
+      }
+      
       viewer.destroy();
     }
     setViewer(null);

@@ -123,9 +123,45 @@
           
           // Change cursor to indicate dragging
           viewer.canvas.style.cursor = 'move';
+        } else {
+          // Clicked elsewhere - hide ship label if it's showing
+          const shipEntity = viewer.entities.getById('ship-at-origin');
+          if (shipEntity && shipEntity.label) {
+            shipEntity.label.show = false;
+          }
         }
         // If not clicked on ship, preserve default behavior (camera controls remain enabled)
       }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+      
+      // Right mouse button down - hide label when clicked elsewhere
+      handler.setInputAction((event: any) => {
+        const pickedObject = viewer.scene.pick(event.position);
+        
+        if (!Cesium.defined(pickedObject) || 
+            !pickedObject.id || 
+            pickedObject.id.id !== 'ship-at-origin') {
+          // Clicked elsewhere - hide ship label if it's showing
+          const shipEntity = viewer.entities.getById('ship-at-origin');
+          if (shipEntity && shipEntity.label) {
+            shipEntity.label.show = false;
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.RIGHT_DOWN);
+      
+      // Middle mouse button down - hide label when clicked elsewhere
+      handler.setInputAction((event: any) => {
+        const pickedObject = viewer.scene.pick(event.position);
+        
+        if (!Cesium.defined(pickedObject) || 
+            !pickedObject.id || 
+            pickedObject.id.id !== 'ship-at-origin') {
+          // Clicked elsewhere - hide ship label if it's showing
+          const shipEntity = viewer.entities.getById('ship-at-origin');
+          if (shipEntity && shipEntity.label) {
+            shipEntity.label.show = false;
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.MIDDLE_DOWN);
       
       // Mouse move - handle dragging
       handler.setInputAction((event: any) => {

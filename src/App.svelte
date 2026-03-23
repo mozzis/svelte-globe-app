@@ -13,11 +13,6 @@
 </script>
 
 <main>
-  <header class="app-header">
-    <h1>🌍 Interactive Earth Globe</h1>
-    <p>Zoom and rotate to explore the world</p>
-  </header>
-  
   <div class="globe-wrapper">
     <GlobeViewer />
     
@@ -45,29 +40,6 @@
 </main>
 
 <style>
-  .app-header {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 1rem;
-    border-radius: 8px;
-    backdrop-filter: blur(10px);
-  }
-  
-  .app-header h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-  }
-  
-  .app-header p {
-    margin: 0;
-    font-size: 0.9rem;
-    opacity: 0.8;
-  }
-  
   .globe-wrapper {
     position: relative;
     width: 100%;

@@ -4,7 +4,7 @@
   import { globeStore, setViewer, setLoading, setError, updateCameraPosition } from '$stores/globeStore';
   
   // Dynamic import of Cesium to avoid build issues
-  let containerElement: HTMLDivElement;
+  let containerElement: HTMLDivElement | undefined;
   let viewer: any = null;
   let Cesium: any;
   let isDraggingShip = false;
@@ -13,6 +13,12 @@
   onMount(async () => {
     try {
       setLoading(true);
+      
+      // Ensure container element is available
+      if (!containerElement) {
+        setError('Failed to initialize: Container element not available');
+        return;
+      }
       
       // Dynamically import Cesium
       Cesium = await import('cesium');
@@ -42,49 +48,70 @@
         destination: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 1000000),
       });
       
-      // Create ship icon as SVG data URL (40x40 pixels)
-      const shipIconSvg = `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      // Create ship icon as SVG data URL (80x80 pixels) - Arleigh Burke-class destroyer style
+      const shipIconSvg = `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="shipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#2c5aa0;stop-opacity:1" />
+          <linearGradient id="hullGradient" x1="0%" y1="0%" x2="100" y2="100%">
+            <stop offset="0%" style="stop-color:#8E9AAF;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#6C7B95;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="superstructureGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#A8B2C8;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#8E9AAF;stop-opacity:1" />
           </linearGradient>
         </defs>
-        <!-- Ship hull -->
-        <path d="M6 28 Q6 32 10 32 L30 32 Q34 32 34 28 L32 24 L8 24 Z" fill="url(#shipGradient)" stroke="#1a365d" stroke-width="1"/>
-        <!-- Ship deck -->
-        <rect x="8" y="16" width="24" height="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.6"/>
+        <!-- Main hull -->
+        <path d="M8 55 L15 50 L65 50 L72 55 L70 65 L68 68 L12 68 L10 65 Z" fill="url(#hullGradient)" stroke="#5A6B7D" stroke-width="1"/>
+        <!-- Bow section -->
+        <path d="M65 50 L75 52 L72 55 L65 50" fill="#6C7B95" stroke="#5A6B7D" stroke-width="0.8"/>
+        <!-- Stern section -->
+        <path d="M15 50 L5 52 L8 55 L15 50" fill="#6C7B95" stroke="#5A6B7D" stroke-width="0.8"/>
+        <!-- Main superstructure -->
+        <rect x="20" y="30" width="40" height="20" fill="url(#superstructureGradient)" stroke="#7A8BA0" stroke-width="1"/>
+        <!-- Forward superstructure -->
+        <rect x="45" y="25" width="20" height="25" fill="url(#superstructureGradient)" stroke="#7A8BA0" stroke-width="1"/>
+        <!-- Bridge structure -->
+        <rect x="50" y="18" width="12" height="12" fill="url(#superstructureGradient)" stroke="#7A8BA0" stroke-width="0.8"/>
+        <!-- Radar arrays (phased array panels) -->
+        <rect x="25" y="32" width="8" height="6" fill="#4A5D73" stroke="#3E4F61" stroke-width="0.5"/>
+        <rect x="47" y="32" width="8" height="6" fill="#4A5D73" stroke="#3E4F61" stroke-width="0.5"/>
+        <rect x="52" y="20" width="6" height="6" fill="#4A5D73" stroke="#3E4F61" stroke-width="0.5"/>
+        <!-- Main gun turret -->
+        <circle cx="58" cy="45" r="4" fill="#5A6B7D" stroke="#4A5D73" stroke-width="0.8"/>
+        <rect x="54" y="43" width="8" height="3" fill="#4A5D73" stroke="#3E4F61" stroke-width="0.5"/>
+        <!-- VLS (Vertical Launch System) cells -->
+        <rect x="22" y="45" width="12" height="4" fill="#3E4F61" stroke="#2C3A47" stroke-width="0.5"/>
+        <rect x="36" y="45" width="8" height="4" fill="#3E4F61" stroke="#2C3A47" stroke-width="0.5"/>
         <!-- Main mast -->
-        <rect x="19" y="6" width="2" height="18" fill="#8b4513"/>
-        <!-- Front mast -->
-        <rect x="13" y="8" width="1.6" height="12" fill="#8b4513"/>
-        <!-- Rear mast -->
-        <rect x="25.4" y="10" width="1.6" height="10" fill="#8b4513"/>
-        <!-- Main sail -->
-        <path d="M14 6 Q20 4 20 8 L20 14 Q14 16 14 12 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
-        <!-- Front sail -->
-        <path d="M8 8 Q13 7 13 10 L13 14 Q8 15 8 12 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
-        <!-- Rear sail -->
-        <path d="M27 10 Q32 9 32 12 L32 16 Q27 17 27 14 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
+        <rect x="39" y="8" width="2" height="22" fill="#7A8BA0"/>
+        <!-- Sensors and equipment on mast -->
+        <rect x="37" y="10" width="6" height="2" fill="#4A5D73"/>
+        <rect x="38" y="14" width="4" height="2" fill="#4A5D73"/>
+        <circle cx="40" cy="18" r="1.5" fill="#4A5D73"/>
+        <!-- Navigation lights -->
+        <circle cx="72" cy="53" r="1" fill="#00FF00"/>
+        <circle cx="8" cy="53" r="1" fill="#FF0000"/>
+        <!-- Wake/water -->
+        <path d="M5 52 Q10 54 15 52 Q20 50 25 52" stroke="#4A87C7" stroke-width="1" fill="none" opacity="0.6"/>
         <!-- Flag -->
-        <path d="M21 6 L28 7 L28 10 L21 9 Z" fill="#ef4444"/>
+        <rect x="41" y="8" width="6" height="4" fill="#FF0000"/>
+        <rect x="41" y="10" width="6" height="1" fill="#FFFFFF"/>
       </svg>`;
       
       const shipIconDataUrl = `data:image/svg+xml;base64,${btoa(shipIconSvg)}`;
       
-      // Add ship icon at origin point (0°, 0°)
+      // Add ship icon at initial camera location for visibility
       const shipEntity = viewer.entities.add({
         id: 'ship-at-origin',
-        name: 'Ship at Origin',
-        position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Longitude: 0°, Latitude: 0°, Height: 0m
+        name: 'Draggable Ship',
+        position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Near Philadelphia, Height: 0m
         billboard: {
           image: shipIconDataUrl,
-          width: 40,
-          height: 40,
-          pixelOffset: new Cesium.Cartesian2(0, -20), // Offset to center the icon
-          verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+          width: 80,
+          height: 80,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
           horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
-          scaleByDistance: new Cesium.NearFarScalar(1.0e3, 1.0, 1.0e7, 0.3), // Scale with distance
+          heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
           disableDepthTestDistance: Number.POSITIVE_INFINITY // Always visible
         },
         label: {

@@ -16,18 +16,57 @@
     latitude: 40.03883,
     height: 0
   };
+
+  // Function to save ship position to params.json
+  const saveShipPosition = async (longitude: number, latitude: number, height: number) => {
+    try {
+      const updatedConfig = {
+        initialShipPosition: {
+          longitude,
+          latitude,
+          height
+        }
+      };
+      
+      // Save to localStorage as primary storage
+      localStorage.setItem('shipPosition', JSON.stringify(updatedConfig.initialShipPosition));
+      
+      // Also update our runtime configuration
+      initialShipPosition = updatedConfig.initialShipPosition;
+      
+      console.log('Ship position saved to localStorage:', { longitude, latitude, height });
+      
+      // Note: Writing to static files from browser is not possible in standard web environment
+      // This would require a backend API endpoint to actually update params.json
+      
+    } catch (error) {
+      console.error('Error saving ship position:', error);
+    }
+  };
   
   onMount(async () => {
     try {
       setLoading(true);
       
-      // Load configuration from params.json
+      // Load configuration from params.json and localStorage
       try {
         const configResponse = await fetch('/params.json');
         if (configResponse.ok) {
           const config = await configResponse.json();
           if (config.initialShipPosition) {
             initialShipPosition = config.initialShipPosition;
+          }
+        }
+        
+        // Check localStorage for saved ship position (takes precedence)
+        const savedPosition = localStorage.getItem('shipPosition');
+        if (savedPosition) {
+          try {
+            const parsedPosition = JSON.parse(savedPosition);
+            initialShipPosition = parsedPosition;
+            console.log('Loaded ship position from localStorage:', parsedPosition);
+          } catch (parseError) {
+            console.warn('Invalid saved position in localStorage, using config file defaults');
           }
         }
       } catch (configError) {
@@ -263,7 +302,12 @@
             );
             const longitude = Cesium.Math.toDegrees(cartographic.longitude);
             const latitude = Cesium.Math.toDegrees(cartographic.latitude);
+            const height = 0; // Keep height at 0 for surface positioning
+            
             shipEntity.label.text = `Ship (${longitude.toFixed(2)}°, ${latitude.toFixed(2)}°)`;
+            
+            // Save the updated position to storage
+            saveShipPosition(longitude, latitude, height);
           }
         }
       }, Cesium.ScreenSpaceEventType.LEFT_UP);

@@ -10,9 +10,29 @@
   let isDraggingShip = false;
   let dragEntity: any = null;
   
+  // Configuration for initial ship position
+  let initialShipPosition = {
+    longitude: -75.59777,
+    latitude: 40.03883,
+    height: 0
+  };
+  
   onMount(async () => {
     try {
       setLoading(true);
+      
+      // Load configuration from params.json
+      try {
+        const configResponse = await fetch('/params.json');
+        if (configResponse.ok) {
+          const config = await configResponse.json();
+          if (config.initialShipPosition) {
+            initialShipPosition = config.initialShipPosition;
+          }
+        }
+      } catch (configError) {
+        console.warn('Could not load params.json, using default ship position:', configError);
+      }
       
       // Ensure container element is available
       if (!containerElement) {
@@ -43,9 +63,13 @@
       // Enable lighting based on sun/moon positions
       viewer.scene.globe.enableLighting = true;
       
-      // Set the initial camera position to show Earth from space
+      // Set the initial camera position to show the ship location
       viewer.camera.setView({
-        destination: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 1000000),
+        destination: Cesium.Cartesian3.fromDegrees(
+          initialShipPosition.longitude, 
+          initialShipPosition.latitude, 
+          1000000
+        ),
       });
       
       // Create ship icon as SVG data URL (80x80 pixels) - Arleigh Burke-class destroyer style
@@ -104,7 +128,11 @@
       const shipEntity = viewer.entities.add({
         id: 'ship-at-origin',
         name: 'Draggable Ship',
-        position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Near Philadelphia, Height: 0m
+        position: Cesium.Cartesian3.fromDegrees(
+          initialShipPosition.longitude, 
+          initialShipPosition.latitude, 
+          initialShipPosition.height
+        ),
         billboard: {
           image: shipIconDataUrl,
           width: 80,

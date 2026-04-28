@@ -42,8 +42,8 @@
         destination: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 1000000),
       });
       
-      // Create ship icon as SVG data URL (20x20 pixels)
-      const shipIconSvg = `<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      // Create ship icon as SVG data URL (40x40 pixels)
+      const shipIconSvg = `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="shipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
@@ -51,23 +51,23 @@
           </linearGradient>
         </defs>
         <!-- Ship hull -->
-        <path d="M3 14 Q3 16 5 16 L15 16 Q17 16 17 14 L16 12 L4 12 Z" fill="url(#shipGradient)" stroke="#1a365d" stroke-width="0.5"/>
+        <path d="M6 28 Q6 32 10 32 L30 32 Q34 32 34 28 L32 24 L8 24 Z" fill="url(#shipGradient)" stroke="#1a365d" stroke-width="1"/>
         <!-- Ship deck -->
-        <rect x="4" y="8" width="12" height="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.3"/>
+        <rect x="8" y="16" width="24" height="8" fill="#e2e8f0" stroke="#94a3b8" stroke-width="0.6"/>
         <!-- Main mast -->
-        <rect x="9.5" y="3" width="1" height="9" fill="#8b4513"/>
+        <rect x="19" y="6" width="2" height="18" fill="#8b4513"/>
         <!-- Front mast -->
-        <rect x="6.5" y="4" width="0.8" height="6" fill="#8b4513"/>
+        <rect x="13" y="8" width="1.6" height="12" fill="#8b4513"/>
         <!-- Rear mast -->
-        <rect x="12.7" y="5" width="0.8" height="5" fill="#8b4513"/>
+        <rect x="25.4" y="10" width="1.6" height="10" fill="#8b4513"/>
         <!-- Main sail -->
-        <path d="M7 3 Q10 2 10 4 L10 7 Q7 8 7 6 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <path d="M14 6 Q20 4 20 8 L20 14 Q14 16 14 12 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
         <!-- Front sail -->
-        <path d="M4 4 Q6.5 3.5 6.5 5 L6.5 7 Q4 7.5 4 6 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <path d="M8 8 Q13 7 13 10 L13 14 Q8 15 8 12 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
         <!-- Rear sail -->
-        <path d="M13.5 5 Q16 4.5 16 6 L16 8 Q13.5 8.5 13.5 7 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.3"/>
+        <path d="M27 10 Q32 9 32 12 L32 16 Q27 17 27 14 Z" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.6"/>
         <!-- Flag -->
-        <path d="M10.5 3 L14 3.5 L14 5 L10.5 4.5 Z" fill="#ef4444"/>
+        <path d="M21 6 L28 7 L28 10 L21 9 Z" fill="#ef4444"/>
       </svg>`;
       
       const shipIconDataUrl = `data:image/svg+xml;base64,${btoa(shipIconSvg)}`;
@@ -79,9 +79,9 @@
         position: Cesium.Cartesian3.fromDegrees(-75.59777, 40.03883, 0), // Longitude: 0°, Latitude: 0°, Height: 0m
         billboard: {
           image: shipIconDataUrl,
-          width: 20,
-          height: 20,
-          pixelOffset: new Cesium.Cartesian2(0, -10), // Offset to center the icon
+          width: 40,
+          height: 40,
+          pixelOffset: new Cesium.Cartesian2(0, -20), // Offset to center the icon
           verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
           horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
           scaleByDistance: new Cesium.NearFarScalar(1.0e3, 1.0, 1.0e7, 0.3), // Scale with distance
@@ -94,7 +94,7 @@
           outlineColor: Cesium.Color.BLACK,
           outlineWidth: 2,
           style: Cesium.LabelStyle.FILL_AND_OUTLINE,
-          pixelOffset: new Cesium.Cartesian2(0, -30),
+          pixelOffset: new Cesium.Cartesian2(0, -50),
           show: false // Initially hidden, will show on select
         }
       });
